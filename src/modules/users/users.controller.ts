@@ -24,6 +24,7 @@ export class UsersController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all list users' })
   findAll() {
     return this.usersService.findAll();
   }

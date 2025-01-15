@@ -1,26 +1,47 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
+    constructor(
+        // Inject the PrismaService into the UsersService
+        private readonly prismaService: PrismaService,
+    ) {}
 
-  findAll() {
-    return `This action returns all users`;
-  }
+    async create(createUserDto: CreateUserDto) {
+        return await this.prismaService.nguoi_dung.create({
+            data: createUserDto,
+        });
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    async findAll() {
+        return await this.prismaService.nguoi_dung.findMany();
+    }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    async findOne(id: number) {
+        return await this.prismaService.nguoi_dung.findUnique({
+            where: {
+                nguoi_dung_id: id,
+            },
+        });
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+    async update(id: number, updateUserDto: UpdateUserDto) {
+        return await this.prismaService.nguoi_dung.update({
+            where: {
+                nguoi_dung_id: id,
+            },
+            data: updateUserDto,
+        });
+    }
+
+    async remove(id: number) {
+        return await this.prismaService.nguoi_dung.delete({
+            where: {
+                nguoi_dung_id: id,
+            },
+        });
+    }
 }
