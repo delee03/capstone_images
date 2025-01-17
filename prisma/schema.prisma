@@ -51,15 +51,21 @@ model luu_anh {
 }
 
 model nguoi_dung {
-  nguoi_dung_id Int         @id @default(autoincrement())
-  email         String      @db.VarChar(255)
-  mat_khau      String      @db.VarChar(255)
-  ho_ten        String      @db.VarChar(255)
+  nguoi_dung_id Int              @id @default(autoincrement())
+  email         String           @db.VarChar(255)
+  mat_khau      String           @db.VarChar(255)
+  ho_ten        String           @db.VarChar(255)
   tuoi          Int
-  anh_dai_dien  String?     @db.VarChar(255)
-  created_at    DateTime?   @default(now()) @db.Timestamp(0)
-  updated_at    DateTime?   @default(now()) @db.Timestamp(0)
+  anh_dai_dien  String?          @db.VarChar(255)
+  created_at    DateTime?        @default(now()) @db.Timestamp(0)
+  updated_at    DateTime?        @default(now()) @db.Timestamp(0)
+  role          nguoi_dung_role? @default(USER)
   binh_luan     binh_luan[]
   hinh_anh      hinh_anh[]
   luu_anh       luu_anh[]
+}
+
+enum nguoi_dung_role {
+  USER
+  ADMIN
 }

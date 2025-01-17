@@ -1,11 +1,11 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,32 +15,35 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 @ApiTags('Users123')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Creating a new user' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
+    @Post()
+    @ApiOperation({ summary: 'Creating a new user' })
+    create(@Body() createUserDto: CreateUserDto) {
+        return this.usersService.create(createUserDto);
+    }
 
-  @Get()
-  @ApiOperation({ summary: 'Get all list users' })
-  findAll() {
-    return this.usersService.findAll();
-  }
+    @Get()
+    @ApiOperation({ summary: 'Get all list users' })
+    findAll() {
+        return this.usersService.findAll();
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
-  }
+    @Get(':id')
+    @ApiOperation({ summary: 'Get info user by id' })
+    findOne(@Param('id') id: string) {
+        return this.usersService.findOne(+id);
+    }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
-  }
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update users' })
+    update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+        return this.usersService.update(+id, updateUserDto);
+    }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
-  }
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete user by ID' })
+    remove(@Param('id') id: string) {
+        return this.usersService.remove(+id);
+    }
 }

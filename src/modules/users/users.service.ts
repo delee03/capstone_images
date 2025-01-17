@@ -20,7 +20,15 @@ export class UsersService {
         return await this.prismaService.nguoi_dung.findMany();
     }
 
-    async findOne(id: number) {
+    async findUserByEmail(email: string): Promise<any> {
+        return await this.prismaService.nguoi_dung.findFirst({
+            where: {
+                email: email,
+            },
+        });
+    }
+
+    async findOne(id: number): Promise<any> {
         return await this.prismaService.nguoi_dung.findUnique({
             where: {
                 nguoi_dung_id: id,
