@@ -1,11 +1,19 @@
-import { Body, Injectable } from '@nestjs/common';
+import { Body, Injectable, UnauthorizedException } from '@nestjs/common';
+
+interface TUserExist {
+    nguoi_dung_id: number;
+    email: string;
+    mat_khau: string;
+    role: string;
+}
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { access } from 'fs';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -13,13 +21,24 @@ export class AuthService {
         private readonly userService: UsersService,
         private readonly prismaService: PrismaService,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) {}
 
     async login(loginDto: LoginDto) {
         if (!loginDto || !loginDto.email || !loginDto.mat_khau) {
             throw new Error('Please provide a valid email and password');
         }
-        const user = await this.userService.findUserByEmail(loginDto.email);
+        const user = await this.prismaService.nguoi_dung.findFirst({
+            where: {
+                email: loginDto.email,
+            },
+            select: {
+                nguoi_dung_id: true,
+                mat_khau: true,
+                email: true,
+                role: true,
+            },
+        });
         if (!user) {
             return {
                 message: 'User not found',
@@ -34,15 +53,20 @@ export class AuthService {
                 message: 'Invalid password',
             };
         }
-        const payload = {
-            email: user.email,
-            sub: user.nguoi_dung_id,
-            ho_ten: user.ho_ten,
-            role: user.role,
-        };
+        // const payload = {
+        //     email: user.email,
+        //     sub: user.nguoi_dung_id,
+        //     ho_ten: user.ho_ten,
+        //     role: user.role,
+        // };
+        // console.log(user);
+
+        // wait for it to resolve
+        const tokens = await this.createToken(user);
+        // console.log({ token2: tokens });
         return {
             message: 'Login successfully',
-            access_token: await this.jwtService.signAsync(payload),
+            tokens,
         };
     }
 
@@ -73,11 +97,142 @@ export class AuthService {
         });
         return {
             message: 'User registered successfully',
-            data: newUser,
+            content: newUser,
         };
     }
 
     async forgotPassword() {
         return 'This action sends a password reset email';
+    }
+
+    async refresh(refreshToken: string) {
+        try {
+            //verify refresh token and get the payload
+            const payload = await this.jwtService.verifyAsync(refreshToken, {
+                secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+            });
+
+            if (!payload) {
+                throw new Error('Invalid or expired refresh token');
+            }
+            console.log(payload);
+
+            //extract the user id from the payload
+            const { sub, role } = payload;
+            const userChecking = await this.prismaService.nguoi_dung.findFirst({
+                where: {
+                    nguoi_dung_id: sub,
+                },
+            });
+            if (!userChecking || userChecking.refresh_token !== refreshToken) {
+                throw new UnauthorizedException();
+            }
+
+            const newAccessToken = await this.jwtService.signAsync(
+                {
+                    email: userChecking.email,
+                    sub: userChecking.nguoi_dung_id,
+                    role: userChecking.role,
+                },
+                {
+                    secret: this.configService.get<string>(
+                        'ACCESS_TOKEN_SECRET',
+                    ),
+                    expiresIn: this.configService.get<string>(
+                        'ACCESS_TOKEN_EXPIRES_IN',
+                    ),
+                },
+            );
+
+            // Generate a new refresh token
+            const newRefreshToken = await this.jwtService.signAsync(
+                {
+                    email: userChecking.email,
+                    sub: userChecking.nguoi_dung_id,
+                    role: userChecking.role,
+                },
+                {
+                    secret: this.configService.get<string>(
+                        'REFRESH_TOKEN_SECRET',
+                    ),
+                    expiresIn: this.configService.get<string>(
+                        'REFRESH_TOKEN_EXPIRES_IN',
+                    ),
+                },
+            );
+
+            // Update the new refresh token in the database
+            await this.prismaService.nguoi_dung.update({
+                where: { nguoi_dung_id: userChecking.nguoi_dung_id },
+                data: { refresh_token: newRefreshToken },
+            });
+
+            return {
+                message: 'Tokens refreshed successfully',
+                access_token: newAccessToken,
+                refresh_token: newRefreshToken,
+            };
+        } catch (error) {
+            // Handle expired or invalid refresh token
+            throw {
+                statusCode: 401,
+                message:
+                    'Refresh token is invalid or has expired. Please log in again.',
+            };
+        }
+    }
+
+    async createToken(userExist: TUserExist): Promise<Object> {
+        // console.log({
+        //     token: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+        //     expiresIn: this.configService.get<string>(
+        //         'ACCESS_TOKEN_EXPIRES_IN',
+        //     ),
+        //     refreshTokenSecret: this.configService.get<string>(
+        //         'REFRESH_TOKEN_SECRET',
+        //     ),
+        //     refreshTokenExpiresIn: this.configService.get<string>(
+        //         'REFRESH_TOKEN_EXPIRES_IN',
+        //     ),
+        // });
+        const accessToken = await this.jwtService.signAsync(
+            {
+                email: userExist.email,
+                sub: userExist.nguoi_dung_id,
+                role: userExist.role,
+            },
+            {
+                secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+                expiresIn: this.configService.get<string>(
+                    'ACCESS_TOKEN_EXPIRES_IN',
+                ),
+            },
+        );
+
+        const refreshToken = await this.jwtService.signAsync(
+            {
+                email: userExist.email,
+                sub: userExist.nguoi_dung_id,
+                role: userExist.role,
+            },
+            {
+                secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+                expiresIn: this.configService.get<string>(
+                    'REFRESH_TOKEN_EXPIRES_IN',
+                ),
+            },
+        );
+
+        //store refresh token in db
+        await this.prismaService.nguoi_dung.update({
+            where: {
+                nguoi_dung_id: userExist.nguoi_dung_id,
+            },
+            data: {
+                refresh_token: refreshToken,
+            },
+        });
+        // console.log(accessToken + '----' + refreshToken);
+        return { accessToken, refreshToken };
     }
 }

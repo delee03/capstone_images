@@ -60,6 +60,7 @@ model nguoi_dung {
   created_at    DateTime?        @default(now()) @db.Timestamp(0)
   updated_at    DateTime?        @default(now()) @db.Timestamp(0)
   role          nguoi_dung_role? @default(USER)
+  refresh_token String?          @db.Text
   binh_luan     binh_luan[]
   hinh_anh      hinh_anh[]
   luu_anh       luu_anh[]
