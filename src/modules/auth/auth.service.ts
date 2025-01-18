@@ -246,8 +246,4 @@ export class AuthService {
         // console.log(accessToken + '----' + refreshToken);
         return { accessToken, refreshToken };
     }
-
-    async getProfile(id: number) {
-        return this.userService.findOne(id);
-    }
 }

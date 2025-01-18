@@ -10,6 +10,8 @@ async function bootstrap() {
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     });
+
+    //  app.useGlobalGuards(); // Sử dụng guard toàn cục
     app.useGlobalPipes(
         new ValidationPipe({
             stopAtFirstError: true, // Stop at first error

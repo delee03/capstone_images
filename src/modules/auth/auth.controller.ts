@@ -15,11 +15,12 @@ import { LoginDto } from './dto/login.dto';
 import { ApiBody, ApiConsumes, ApiOperation } from '@nestjs/swagger';
 import { log } from 'console';
 import { AuthGuard } from './auth.guard';
+import { Public } from 'src/common/decorater/public.decorator';
 
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
-
+    @Public()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Sign Up user' })
     @Post('register')
@@ -27,6 +28,7 @@ export class AuthController {
         return this.authService.register(registerDto);
     }
 
+    @Public()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Login user' })
     @Post('login')
@@ -54,10 +56,12 @@ export class AuthController {
         return this.authService.refresh(refreshToken);
     }
 
-    @UseGuards(AuthGuard)
+    // @UseGuards(AuthGuard)
+
     @HttpCode(HttpStatus.OK)
     @Get('profile')
     async getProfile(@Request() req) {
-        return req.user;
+        //  console.log('trả về controller');
+        return req.user_profile;
     }
 }
