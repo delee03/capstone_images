@@ -24,7 +24,10 @@ export class AuthService {
         private readonly configService: ConfigService,
     ) {}
 
-    async login(loginDto: LoginDto) {
+    async login(loginDto: LoginDto): Promise<{
+        message: string;
+        tokens?: { accessToken: string; refreshToken: string };
+    }> {
         if (!loginDto || !loginDto.email || !loginDto.mat_khau) {
             throw new Error('Please provide a valid email and password');
         }
@@ -70,7 +73,9 @@ export class AuthService {
         };
     }
 
-    async register(registerDto: RegisterDto) {
+    async register(
+        registerDto: RegisterDto,
+    ): Promise<{ message: string; content?: any }> {
         if (!registerDto || !registerDto.email || !registerDto.mat_khau) {
             throw new Error('Please provide a valid email and password');
         }
@@ -105,7 +110,11 @@ export class AuthService {
         return 'This action sends a password reset email';
     }
 
-    async refresh(refreshToken: string) {
+    async refresh(refreshToken: string): Promise<{
+        message: string;
+        access_token: string;
+        refresh_token: string;
+    }> {
         try {
             //verify refresh token and get the payload
             const payload = await this.jwtService.verifyAsync(refreshToken, {
@@ -182,19 +191,21 @@ export class AuthService {
         }
     }
 
-    async createToken(userExist: TUserExist): Promise<Object> {
-        // console.log({
-        //     token: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
-        //     expiresIn: this.configService.get<string>(
-        //         'ACCESS_TOKEN_EXPIRES_IN',
-        //     ),
-        //     refreshTokenSecret: this.configService.get<string>(
-        //         'REFRESH_TOKEN_SECRET',
-        //     ),
-        //     refreshTokenExpiresIn: this.configService.get<string>(
-        //         'REFRESH_TOKEN_EXPIRES_IN',
-        //     ),
-        // });
+    async createToken(
+        userExist: TUserExist,
+    ): Promise<{ accessToken: string; refreshToken: string }> {
+        console.log({
+            token: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+            expiresIn: this.configService.get<string>(
+                'ACCESS_TOKEN_EXPIRES_IN',
+            ),
+            refreshTokenSecret: this.configService.get<string>(
+                'REFRESH_TOKEN_SECRET',
+            ),
+            refreshTokenExpiresIn: this.configService.get<string>(
+                'REFRESH_TOKEN_EXPIRES_IN',
+            ),
+        });
         const accessToken = await this.jwtService.signAsync(
             {
                 email: userExist.email,
@@ -234,5 +245,9 @@ export class AuthService {
         });
         // console.log(accessToken + '----' + refreshToken);
         return { accessToken, refreshToken };
+    }
+
+    async getProfile(id: number) {
+        return this.userService.findOne(id);
     }
 }

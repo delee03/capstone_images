@@ -65,8 +65,7 @@ model nguoi_dung {
   hinh_anh      hinh_anh[]
   luu_anh       luu_anh[]
 }
-
-enum nguoi_dung_role {
+ enum nguoi_dung_role {
   USER
   ADMIN
 }
